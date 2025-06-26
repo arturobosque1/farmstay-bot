@@ -4,9 +4,9 @@ import sqlite3
 from datetime import datetime
 
 # ЗАМЕНИ НА СВОИ ДАННЫЕ
-API_ID = 123456
-API_HASH = "your_api_hash"
-BOT_TOKEN = "your_bot_token"
+API_ID = int(os.getenv("API_ID"))
+API_HASH = os.getenv("API_HASH")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 app = Client("farmstay_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
