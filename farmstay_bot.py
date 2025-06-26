@@ -1,19 +1,21 @@
-
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 import sqlite3
 from datetime import datetime
 
-API_ID = 123456  # <-- Замени на свой
+# ЗАМЕНИ ЭТИ ДАННЫЕ НА СВОИ
+API_ID = 123456
 API_HASH = "your_api_hash"
 BOT_TOKEN = "your_bot_token"
 
+# Инициализация клиента Pyrogram
 app = Client("farmstay_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# База данных
+# Создаём и подключаем базу данных SQLite
 conn = sqlite3.connect("bookings.db", check_same_thread=False)
 cursor = conn.cursor()
-cursor.execute("""CREATE TABLE IF NOT EXISTS bookings (
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS bookings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
     region TEXT,
@@ -21,12 +23,14 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS bookings (
     date TEXT,
     services TEXT,
     created_at TEXT
-)""")
+)
+""")
 conn.commit()
 
-# Память пользователей
+# Хранилище временных данных для пользователей
 user_data = {}
 
+# Команда /start
 @app.on_message(filters.command("start"))
 async def start(client, message: Message):
     user_id = message.from_user.id
@@ -39,19 +43,19 @@ async def start(client, message: Message):
     ])
 
     await message.reply_text(
-        "👋 Привет! Добро пожаловать в эко-сервис 🏕️ *FarmStay*.
-
-"
+        "👋 Привет! Добро пожаловать в эко-сервис 🏕️ *FarmStay*.\n\n"
         "Выбери регион, где ты хочешь остановиться:",
         reply_markup=keyboard,
         parse_mode="Markdown"
     )
 
+# Обработка кнопок (callback)
 @app.on_callback_query()
 async def handle_callback(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
     data = callback_query.data
 
+    # Регион
     if data.startswith("region_"):
         region = data.split("_")[1]
         user_data[user_id]["region"] = region
@@ -62,13 +66,12 @@ async def handle_callback(client, callback_query: CallbackQuery):
         ])
 
         await callback_query.message.edit_text(
-            f"📍 Регион выбран: *{region.title()}*
-
-Выбери домик:",
+            f"📍 Регион выбран: *{region.title()}*\n\nВыбери домик:",
             reply_markup=keyboard,
             parse_mode="Markdown"
         )
 
+    # Домик
     elif data.startswith("house_"):
         house = data.split("_")[1]
         user_data[user_id]["house"] = house
@@ -79,13 +82,12 @@ async def handle_callback(client, callback_query: CallbackQuery):
         ])
 
         await callback_query.message.edit_text(
-            f"🏡 Домик выбран: *{house.replace('forest', 'Лесная сказка').replace('mountain', 'Вид на горы')}*
-
-Выбери даты:",
+            f"🏡 Домик выбран: *{house.replace('forest', 'Лесная сказка').replace('mountain', 'Вид на горы')}*\n\nВыбери даты:",
             reply_markup=keyboard,
             parse_mode="Markdown"
         )
 
+    # Даты
     elif data.startswith("date_"):
         date = data.split("_", 1)[1].replace("_", "–")
         user_data[user_id]["date"] = date
@@ -98,20 +100,21 @@ async def handle_callback(client, callback_query: CallbackQuery):
         ])
 
         user_data[user_id]["services"] = []
-        await callback_query.message.edit_text(
-            f"📅 Даты брони: *{date}*
 
-Выбери доп.услуги (можно несколько):",
+        await callback_query.message.edit_text(
+            f"📅 Даты брони: *{date}*\n\nВыбери доп.услуги (можно несколько):",
             reply_markup=keyboard,
             parse_mode="Markdown"
         )
 
+    # Услуги
     elif data.startswith("service_"):
         service = data.split("_")[1]
         if service not in user_data[user_id]["services"]:
             user_data[user_id]["services"].append(service)
         await callback_query.answer("Услуга добавлена ✔")
 
+    # Завершить бронирование
     elif data == "done":
         region = user_data[user_id].get("region", "—")
         house = user_data[user_id].get("house", "—")
@@ -119,6 +122,7 @@ async def handle_callback(client, callback_query: CallbackQuery):
         services = user_data[user_id].get("services", [])
         service_text = ", ".join(services) or "—"
 
+        # Сохраняем в БД
         cursor.execute(
             "INSERT INTO bookings (user_id, region, house, date, services, created_at) VALUES (?, ?, ?, ?, ?, ?)",
             (user_id, region, house, date, service_text, datetime.now().isoformat())
@@ -126,20 +130,19 @@ async def handle_callback(client, callback_query: CallbackQuery):
         conn.commit()
 
         await callback_query.message.edit_text(
-            f"🎉 *Бронирование подтверждено!*
-
-"
-            f"📍 Регион: *{region.title()}*
-"
-            f"🏡 Домик: *{house}*
-"
-            f"📅 Даты: *{date}*
-"
-            f"🧺 Услуги: {service_text}
-
-"
+            f"🎉 *Бронирование подтверждено!*\n\n"
+            f"📍 Регион: *{region.title()}*\n"
+            f"🏡 Домик: *{house}*\n"
+            f"📅 Даты: *{date}*\n"
+            f"🧺 Услуги: {service_text}\n\n"
             f"Спасибо за выбор *FarmStay*! 🌿",
             parse_mode="Markdown"
+        )
+
+# Запуск бота
+if __name__ == "__main__":
+    app.run()
+
         )
 
 if __name__ == "__main__":
