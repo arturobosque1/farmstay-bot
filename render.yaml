@@ -1,8 +1,0 @@
-
-services:
-  - type: web
-    name: farmstay-bot
-    env: python
-    plan: free
-    buildCommand: ""
-    startCommand: python farmstay_bot.py
