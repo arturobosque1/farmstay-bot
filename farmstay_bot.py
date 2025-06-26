@@ -60,7 +60,7 @@ async def handle_callback(client, callback_query: CallbackQuery):
         ])
 
         await callback_query.message.edit_text(
-            f"📍 Регион выбран: *{region.title()}*
+            f"📍 Регион выбран: *{region.title()}*\n\nВыбери домик:"
 
 Выбери домик:",
             reply_markup=keyboard,
