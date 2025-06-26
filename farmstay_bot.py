@@ -3,15 +3,14 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, 
 import sqlite3
 from datetime import datetime
 
-# ЗАМЕНИ ЭТИ ДАННЫЕ НА СВОИ
+# ЗАМЕНИ НА СВОИ ДАННЫЕ
 API_ID = 123456
 API_HASH = "your_api_hash"
 BOT_TOKEN = "your_bot_token"
 
-# Инициализация клиента Pyrogram
 app = Client("farmstay_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# Создаём и подключаем базу данных SQLite
+# Подключение к базе данных SQLite
 conn = sqlite3.connect("bookings.db", check_same_thread=False)
 cursor = conn.cursor()
 cursor.execute("""
@@ -27,10 +26,8 @@ CREATE TABLE IF NOT EXISTS bookings (
 """)
 conn.commit()
 
-# Хранилище временных данных для пользователей
 user_data = {}
 
-# Команда /start
 @app.on_message(filters.command("start"))
 async def start(client, message: Message):
     user_id = message.from_user.id
@@ -49,13 +46,11 @@ async def start(client, message: Message):
         parse_mode="Markdown"
     )
 
-# Обработка кнопок (callback)
 @app.on_callback_query()
 async def handle_callback(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
     data = callback_query.data
 
-    # Регион
     if data.startswith("region_"):
         region = data.split("_")[1]
         user_data[user_id]["region"] = region
@@ -71,7 +66,6 @@ async def handle_callback(client, callback_query: CallbackQuery):
             parse_mode="Markdown"
         )
 
-    # Домик
     elif data.startswith("house_"):
         house = data.split("_")[1]
         user_data[user_id]["house"] = house
@@ -87,7 +81,6 @@ async def handle_callback(client, callback_query: CallbackQuery):
             parse_mode="Markdown"
         )
 
-    # Даты
     elif data.startswith("date_"):
         date = data.split("_", 1)[1].replace("_", "–")
         user_data[user_id]["date"] = date
@@ -107,14 +100,12 @@ async def handle_callback(client, callback_query: CallbackQuery):
             parse_mode="Markdown"
         )
 
-    # Услуги
     elif data.startswith("service_"):
         service = data.split("_")[1]
         if service not in user_data[user_id]["services"]:
             user_data[user_id]["services"].append(service)
         await callback_query.answer("Услуга добавлена ✔")
 
-    # Завершить бронирование
     elif data == "done":
         region = user_data[user_id].get("region", "—")
         house = user_data[user_id].get("house", "—")
@@ -122,7 +113,6 @@ async def handle_callback(client, callback_query: CallbackQuery):
         services = user_data[user_id].get("services", [])
         service_text = ", ".join(services) or "—"
 
-        # Сохраняем в БД
         cursor.execute(
             "INSERT INTO bookings (user_id, region, house, date, services, created_at) VALUES (?, ?, ?, ?, ?, ?)",
             (user_id, region, house, date, service_text, datetime.now().isoformat())
@@ -137,12 +127,6 @@ async def handle_callback(client, callback_query: CallbackQuery):
             f"🧺 Услуги: {service_text}\n\n"
             f"Спасибо за выбор *FarmStay*! 🌿",
             parse_mode="Markdown"
-        )
-
-# Запуск бота
-if __name__ == "__main__":
-    app.run()
-
         )
 
 if __name__ == "__main__":
