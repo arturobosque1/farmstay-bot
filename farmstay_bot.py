@@ -39,13 +39,11 @@ async def start(client, message: Message):
     ])
 
     await message.reply_text(
-        "👋 Привет! Добро пожаловать в эко-сервис 🏕️ *FarmStay*.
-
-"
-        "Выбери регион, где ты хочешь остановиться:",
-        reply_markup=keyboard,
-        parse_mode="Markdown"
-    )
+    "👋 Привет! Добро пожаловать в эко-сервис 🏕️ *FarmStay*.\n\n"
+    "Выбери регион, где ты хочешь остановиться:",
+    reply_markup=keyboard,
+    parse_mode="Markdown"
+)
 
 @app.on_callback_query()
 async def handle_callback(client, callback_query: CallbackQuery):
